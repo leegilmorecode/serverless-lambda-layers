@@ -1,0 +1,60 @@
+{
+  "info": {
+    "_postman_id": "10a8ab4a-6edc-460c-bb7c-c5ea174fa2d8",
+    "name": "screenshot-app",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create screenshot (local)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"webpage\": \"https://bbc.co.uk\" }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/development/screenshots",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["development", "screenshots"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create screenshot (aws)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"webpage\": \"https://apple.co.uk\" }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}",
+          "host": ["{{url}}"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "url",
+      "value": "https://xxx.execute-api.eu-west-1.amazonaws.com/development/screenshots"
+    }
+  ]
+}

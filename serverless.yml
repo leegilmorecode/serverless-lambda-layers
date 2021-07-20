@@ -1,0 +1,112 @@
+service: screenshot-app
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  memorySize: 128
+  stage: ${opt:stage, 'development'}
+  region: ${opt:region, 'eu-west-1'}
+  apiGateway:
+    shouldStartNameWithService: true
+# the following plugins are used for packaging the lambda/layers, deploying to s3 local when ran in offline mode, and running in offline mode
+plugins:
+  - serverless-webpack
+  - serverless-s3-local
+  - serverless-offline
+  - serverless-s3-remover # remove files from bucket on sls remove
+layers:
+  # this is where we add our lambda layers - this is a pre-compiled version of
+  # chrome_aws_lambda as I want to run this locally too for developer testing offline
+  chromePreBuilt:
+    package:
+      artifact: layers/chrome_aws_lambda.zip
+package:
+  individually: true
+  # we exclude the node_modules and layer here as they are included in the layer
+  # this keeps our lambda package size small.
+  exclude:
+    - layer/**
+    - node_modules/**
+functions:
+  generate-screenshot:
+    role: screenshotAppRole
+    handler: ./src/generate-screenshot.handler
+    environment:
+      BUCKET_NAME: ${self:custom.bucketName}
+      REGION: ${self:provider.region}
+    memorySize: 2048
+    # this is where we configure which lambda layers we want to attach to the function
+    layers:
+      - { Ref: ChromePreBuiltLambdaLayer }
+    timeout: 30
+    # this is the api gateway integration with our lambda function
+    events:
+      - http:
+          path: /screenshots
+          method: post
+resources:
+  Resources:
+    # role for the lambda so it can write the screenshot to s3 and log the function output
+    screenshotAppRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: MyCustRole1
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: myPolicyName
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - 'Fn::Join':
+                        - ':'
+                        - - 'arn:aws:logs'
+                          - Ref: 'AWS::Region'
+                          - Ref: 'AWS::AccountId'
+                          - 'log-group:/aws/lambda/*:*:*'
+                - Effect: 'Allow'
+                  Action:
+                    - 's3:PutObject'
+                    - 's3:PutObjectAcl'
+                  Resource:
+                    Fn::Join:
+                      - ''
+                      - - 'arn:aws:s3:::'
+                        - 'Ref': 'AssetsBucket'
+                        - '/*'
+    # creation of the s3 bucket where the screenshots are stored
+    AssetsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        AccessControl: PublicRead # ensure that the bucket is open to the public
+        BucketName: ${self:custom.bucketName}
+custom:
+  bucketName: screenshot-app-${self:provider.stage}
+  # s3-remover config
+  remover:
+    buckets:
+      - ${self:custom.bucketName}
+  # s3 local config
+  s3:
+    host: localhost
+    directory: ./local-s3
+  # webpack config
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules:
+      # we also force exclude chrome-aws-lambda and the aws-sdk through webpack
+      forceExclude:
+        - chrome-aws-lambda
+        - aws-sdk
