@@ -2,7 +2,7 @@
 
 ## Introduction
 
-An example online screenshot application using AWS Lambda Layers on the [Serverless Framework](https://www.serverless.com/) which is the base for the following [blog post](/)
+An example online screenshot application using AWS Lambda Layers on the [Serverless Framework](https://www.serverless.com/) which is the base for the following [blog post](https://leejamesgilmore.medium.com/serverless-lambda-layers-d8f8374404e3)
 
 The application uses [chrome-aws-lambda](https://github.com/alixaxel/chrome-aws-lambda) as a [lambda layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) when deployed to the cloud which allows us to use Chromium and [Puppeteer](https://developers.google.com/web/tools/puppeteer) to open the desired webpage within a lambda in a headless browser, generate the screenshot, and store it in [S3](https://aws.amazon.com/s3/) (**returning the download path in the API response**)
 
